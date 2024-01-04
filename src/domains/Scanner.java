@@ -4,7 +4,9 @@ package domains;
 import domains.enums.TokenType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static domains.enums.TokenType.*;
 
@@ -16,6 +18,28 @@ public class Scanner {
     private int start = 0;
     private int current = 0;
     private int line = 1;
+
+    private static final Map<String, TokenType> keywords;
+
+    static{
+        keywords = new HashMap<>();
+        keywords.put("and", AND);
+        keywords.put("class", CLASS);
+        keywords.put("else", ELSE);
+        keywords.put("false", FALSE);
+        keywords.put("for", FOR);
+        keywords.put("fun", FUN);
+        keywords.put("if", IF);
+        keywords.put("nil", NIL);
+        keywords.put("or", OR);
+        keywords.put("print", PRINT);
+        keywords.put("return", RETURN);
+        keywords.put("super", SUPER);
+        keywords.put("this", THIS);
+        keywords.put("true", TRUE);
+        keywords.put("var", VAR);
+        keywords.put("while", WHILE);
+    }
 
     public Scanner(String source){
         this.source = source;
@@ -67,12 +91,26 @@ public class Scanner {
 
             //COMMENTS
             case '/':
+                if(current > 1) {
+                    if (source.charAt(current - 2) == '*') {
+                        break;
+                    }
+                }
                 if(match('/')){
                     while (peek() != '\n' && !isAtEnd()) advance();
-                }else {
+                } else if (match('*')) {
+
+                    while (peek() != '*' || !isAtEnd()) {
+                        if (peek() == '\n') {
+                            line++;
+                        }
+                        advance();
+                    }
+                } else{
                     addToken(SLASH);
                 }
                 break;
+
 
             case ' ':
             case '\r':
@@ -88,11 +126,27 @@ public class Scanner {
             default:
                 if(isDigit(c)){
                     number();
-                }else {
+                }else if (isAlpha(c)){
+                    identifier();
+                }
+                else {
                     Lox.error(line, "Unexpected character.");
                 }
                 break;
         }
+    }
+
+    private void identifier(){
+        while (isAplhaNumeric(peek())) advance();
+
+        String text = source.substring(start, current);
+        TokenType type = keywords.get(text);
+
+        if(type == null) {
+            type = IDENTIFIER;
+        }
+
+        addToken(type);
     }
 
     private boolean isDigit(char c){
@@ -111,14 +165,23 @@ public class Scanner {
         addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
     }
 
-    private char peekNext(){
-        if(current + 1 >= source.length()) return '\0';
-        return source.charAt(current + 1);
-    }
-
     private char peek(){
         if(isAtEnd()) return '\0';
-        return source.charAt(current);
+        var a =  source.charAt(current);
+        return a;
+    }
+
+    private char peekNext(){
+        if(current + 0 >= source.length()) return '\0';
+        return source.charAt(current + 0);
+    }
+
+    private boolean isAplhaNumeric(char c){
+        return isAlpha(c) || isDigit(c);
+    }
+
+    private boolean isAlpha(char c){
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
     }
 
     private void string(){

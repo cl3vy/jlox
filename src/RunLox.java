@@ -14,5 +14,6 @@ public class RunLox {
         }else{
             Lox.runPrompt();
         }
+
     }
 }
